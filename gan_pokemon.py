@@ -10,7 +10,6 @@ import math
 import os
 from PIL import Image
 from image_utils import dim_ordering_fix, dim_ordering_unfix, dim_ordering_shape
-
 from keras.models import Sequential
 from keras.layers import Reshape, Flatten, LeakyReLU, Activation, Dense, BatchNormalization,Conv2D,Conv2DTranspose,AveragePooling2D,MaxPooling2D
 from keras.regularizers import L1L2
@@ -23,7 +22,7 @@ from keras.layers import Dropout
 
 
 
-# define the standalone discriminator model
+# дискриминатор
 def define_discriminator():
     reg = lambda: L1L2(l1=1e-7, l2=1e-7)
     model = Sequential()
@@ -57,7 +56,7 @@ def define_discriminator():
     return model
 
 
-
+#генератор
 def define_generator(latent_dim):
     model = Sequential()
     nch = 256
@@ -92,6 +91,7 @@ def define_generator(latent_dim):
     model.add(Activation('tanh'))
     return model
 
+#генератор+дискриминатор
 def define_gan(g_model, d_model):
 
     d_model.trainable = False
@@ -179,7 +179,7 @@ def train(g_model, d_model, gan_model, dataset, latent_dim, n_batch=16):
 
 
 
-def generate1(latent_dim,n_batch):
+def generate(latent_dim,n_batch):
     generator = define_generator(latent_dim)
     generator.compile(loss='binary_crossentropy', optimizer="SGD")
     generator.load_weights('generator1')
@@ -192,10 +192,9 @@ def generate1(latent_dim,n_batch):
     image = X.reshape((128,128,3))
     Image.fromarray(image.astype(np.uint8)).save("jupit.png")
 
-
+# для датасета с крупными картиночками
 def process_data():
     size1, size2, channel = 128, 128, 3
-    BATCH_SIZE = 64
 
     pokemon_dir = 'resized1'
 
@@ -211,28 +210,6 @@ def process_data():
 
     return images, num_images
 
-def process_data2():
-    size1, size2, channel = 128, 128, 3
-    BATCH_SIZE = 64
-
-    pokemon_dir = 'dataset'
-    step=0
-    for i in os.listdir(pokemon_dir):
-        for j in os.listdir(pokemon_dir+'/'+i):
-            step+=1
-    step1=0
-    images = np.zeros((step, size1, size2, channel))
-    for i, folder in enumerate(os.listdir(pokemon_dir)):
-        for j, photo in enumerate(os.listdir(pokemon_dir+'/'+folder)):
-            images[step1] = io.imread(pokemon_dir + '/' + folder+'/'+photo)
-            step1+=1
-
-
-    images = images.astype('float32')
-
-    num_images = len(images)
-
-    return images, num_images
 
 if __name__=='__main__':
 
@@ -245,7 +222,7 @@ if __name__=='__main__':
   gan_model = define_gan(g_model, d_model)
 
 
-  (xtrain, ytrain) = process_data2()
+  (xtrain, ytrain) = process_data()
 
   xtrain=xtrain.astype('float32')
 
@@ -253,4 +230,4 @@ if __name__=='__main__':
 
   train(g_model, d_model, gan_model, xtrain, latent_dim,n_batch=16)
 
-  #generate1(latent_dim,n_batch=1)
+  #generate(latent_dim,n_batch=1)
